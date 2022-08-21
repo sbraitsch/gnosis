@@ -15,6 +15,45 @@ pub async fn init_db(pool: &Pool<PostgresConnectionManager<NoTls>>) -> Result<()
     Ok(())
 }
 
+pub async fn get_command(pool: Pool<PostgresConnectionManager<NoTls>>, command_id: i32)
+-> Result<Command, (StatusCode, String)> {
+    let conn = pool.get().await.map_err(internal_error)?;
+
+    let result = conn
+        .query_one("SELECT * FROM commandtable WHERE id = $1", &[&command_id])
+        .await
+        .map_err(internal_error)?;
+    
+    Ok(Command::from_row(result))
+}
+
+pub async fn get_commands_by_category(pool: Pool<PostgresConnectionManager<NoTls>>, category: String)
+-> Result<Vec<Command>, (StatusCode, String)> {
+    let conn = pool.get().await.map_err(internal_error)?;
+
+    let result = conn
+        .query("SELECT * FROM commandtable WHERE category = $1", &[&category])
+        .await
+        .map_err(internal_error)?;
+    
+    let command_list = result.into_iter().map(
+        |row| Command::from_row(row)).collect();
+
+    Ok(command_list)
+}
+
+pub async fn get_random_command(pool: Pool<PostgresConnectionManager<NoTls>>)
+-> Result<Command, (StatusCode, String)> {
+    let conn = pool.get().await.map_err(internal_error)?;
+
+    let result = conn
+        .query_one("SELECT * FROM commandtable ORDER BY random() LIMIT 1", &[])
+        .await
+        .map_err(internal_error)?;
+    
+    Ok(Command::from_row(result))
+}
+
 pub async fn get_commands(pool: Pool<PostgresConnectionManager<NoTls>>)
 ->  Result<Vec<Command>, (StatusCode, String)> {
     let conn = pool.get().await.map_err(internal_error)?;
