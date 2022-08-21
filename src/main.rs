@@ -1,16 +1,16 @@
 mod db_operations;
 mod datatypes;
 mod errorhandler;
+mod command_service;
 
 use axum::{
     routing::get,
-    Json, 
-    http::StatusCode,
-    Router, Extension, extract::Path,
+    Router, 
+    Extension,
 };
+use command_service::{get_command, get_commands, get_commands_by_category, get_random_command, post_command, delete_command};
 use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
-use datatypes::{Command, CreateCommand};
 use tokio_postgres::NoTls;
 use std::net::SocketAddr;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -44,59 +44,4 @@ async fn main() {
         .serve(app.into_make_service())
         .await
         .unwrap()
-}
-
-type ConnectionPool = Pool<PostgresConnectionManager<NoTls>>;
-
-async fn get_command(
-    Extension(pool): Extension<ConnectionPool>, 
-    Path(command_id): Path<i32>
-) -> Result<(StatusCode, Json<Command>),(StatusCode, String)> {
-    let command = db_operations::get_command(pool, command_id).await;
-
-    match command {
-        Ok(result) => Ok((StatusCode::OK, Json(result))),
-        Err(error) => Err((StatusCode::NOT_FOUND, error.1))
-    }
-}
-
-async fn get_random_command(
-    Extension(pool): Extension<ConnectionPool>
-) -> Result<(StatusCode, Json<Command>),(StatusCode, String)> {
-    let command = db_operations::get_random_command(pool).await.unwrap();
-    Ok((StatusCode::OK, Json(command)))
-}
-
-async fn get_commands_by_category(
-    Extension(pool): Extension<ConnectionPool>, 
-    Path(category): Path<String>
-) -> Result<(StatusCode, Json<Vec<Command>>),(StatusCode, String)> {
-    let commands = db_operations::get_commands_by_category(pool, category).await;
-
-    match commands {
-        Ok(result) => Ok((StatusCode::OK, Json(result))),
-        Err(error) => Err((StatusCode::NOT_FOUND, error.1))
-    }
-}
-
-async fn get_commands(
-    Extension(pool): Extension<ConnectionPool>,
-) -> Result<(StatusCode, Json<Vec<Command>>), (StatusCode, String)> {
-    let commands = db_operations::get_commands(pool).await.unwrap();
-    
-    Ok((StatusCode::OK, Json(commands)))
-}
-
-async fn post_command(
-    Extension(pool): Extension<ConnectionPool>, 
-    Json(payload): Json<CreateCommand>
-) -> Result<(StatusCode, Json<Command>), (StatusCode, String)> {
-    db_operations::save_command(pool, payload).await
-}
-
-async fn delete_command(
-    Extension(pool): Extension<ConnectionPool>,
-    Path(command_id): Path<i32>
-) -> Result<StatusCode, (StatusCode, String)> {
-    db_operations::delete_command(pool, command_id).await
 }

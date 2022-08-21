@@ -1,11 +1,7 @@
+use bb8::Pool;
+use bb8_postgres::PostgresConnectionManager;
 use serde::{Serialize, Deserialize};
-use tokio_postgres::Row;
-
-#[derive(Serialize, Deserialize)]
-pub struct Category {
-    id: i32,
-    name: String,
-}
+use tokio_postgres::{Row, NoTls};
 
 #[derive(Deserialize)]
 pub struct CreateCommand {
@@ -32,4 +28,6 @@ impl Command {
         }
     }
 }
+
+pub type ConnectionPool = Pool<PostgresConnectionManager<NoTls>>;
 
