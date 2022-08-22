@@ -1,19 +1,20 @@
 mod db_operations;
 mod datatypes;
 mod errorhandler;
-mod command_service;
+mod snippet_service;
 
 use axum::{
     routing::get,
     Router, 
     Extension,
 };
-use command_service::{get_command, get_commands, get_commands_by_category, get_random_command, post_command, delete_command};
 use bb8::Pool;
 use bb8_postgres::PostgresConnectionManager;
 use tokio_postgres::NoTls;
 use std::net::SocketAddr;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+use crate::snippet_service::{get_snippets, get_snippet, delete_snippet, get_snippets_by_category, get_random_snippet, post_snippet};
 
 #[tokio::main]
 async fn main() {
@@ -31,10 +32,10 @@ async fn main() {
     db_operations::init_db(&pool).await.expect("database initialization");
 
     let app = Router::new()
-        .route("/commands", get(get_commands).post(post_command))
-        .route("/commands/:command_id", get(get_command).delete(delete_command))
-        .route("/commands/random", get(get_random_command))
-        .route("/commands/category/:category_id", get(get_commands_by_category))
+        .route("/snippets", get(get_snippets).post(post_snippet))
+        .route("/snippets/:snippet_id", get(get_snippet).delete(delete_snippet))
+        .route("/snippets/random", get(get_random_snippet))
+        .route("/snippets/category/:category_id", get(get_snippets_by_category))
         .layer(Extension(pool));
 
 
